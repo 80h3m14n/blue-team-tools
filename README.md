@@ -2,6 +2,8 @@
 
 Practical toolkit for blue teams to detect, analyze, and mitigate cyber threats effectively, includes: tips & tricks, scripts, configurations, and tools for incident response, malware analysis, network monitoring, and threat intelligence.
 
+### Blue team life cycle
+
 1. Preparation/hardening
 2. Detection & monitoring
 3. Analysis
@@ -9,6 +11,7 @@ Practical toolkit for blue teams to detect, analyze, and mitigate cyber threats 
 5. Eradication
 6. Recovery
 7. Lessons Learned
+
 
 ## 🧭 Table of Contents
 - [Project Structure](#-project-structure)
@@ -80,14 +83,6 @@ blue-team-tools/
 │   └── elastic/
 │       └── detection_rules/
 │           └── suspicious_login.json
-│
-├── tools/
-│   ├── ir-helpers/
-│   │   └── forensic_collector/
-│   ├── malware-analysis/
-│   │   └── sample-detector/
-│   └── network-tools/
-│       └── passive_sniffer/
 │
 └── tips-and-tricks/
     ├── powershell-snippets.md
