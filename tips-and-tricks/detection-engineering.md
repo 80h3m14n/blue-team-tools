@@ -1,3 +1,5 @@
+# Detection engineering
+
 Detection engineering is a structured, systematic approach to developing, implementing, and refining threat detection mechanisms tailored to an organization's specific environment.
 
 The process is cyclical and includes stages such as:
