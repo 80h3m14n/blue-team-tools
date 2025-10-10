@@ -184,7 +184,7 @@ Check out the [tips-and-tricks/](https://github.com/80h3m14n/blue-team-tools/tre
 - [Bash oneliners](https://github.com/80h3m14n/blue-team-tools/blob/main/tips-and-tricks/bash-oneliners.md)
 - [Detection engineering tricks](https://github.com/80h3m14n/blue-team-tools/blob/main/tips-and-tricks/detection-engineering.md)
 - [Python tricks](https://github.com/80h3m14n/blue-team-tools/blob/main/tips-and-tricks/python-tricks.md)
-- Threat hunting queries
+- [Threat hunting tips](https://github.com/80h3m14n/blue-team-tools/blob/main/tips-and-tricks/threat-hunting.md)
 
 ✅ Actively hunt threats and never rely solely on tools  
 ✅ Invest in your infrastructure  
