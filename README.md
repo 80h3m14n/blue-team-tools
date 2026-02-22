@@ -107,6 +107,15 @@ blue-team-tools/
 - Sandbox helper scripts  
 - IOC extractors  
 
+Virtualization environment troubleshoots
+
+- On the host, ensure firewall rules allow QEMU’s user-mode NAT traffic.
+- If you use security features like SELinux or AppArmor, verify they are not restricting VMs network access.
+- Ensure no conflicting DHCP
+- Use NAT to safely isolates the VM behind the host’s network stack.
+
+
+
 ## Network Monitoring
 - PCAP parsers and analyzers  
 - Zeek and Suricata configs  
