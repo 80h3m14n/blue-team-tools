@@ -1,5 +1,14 @@
 # Cloud backup comparisons
 
+Backup systems are often overlooked inmany enterprises making them a prime target. Blue teams must ensure backup protection is integrated into the overall security posture, not treated as a "by-the-way" thing.
+
+### Best practices
+
+- Implement write-once, read-many (WORM) storage
+- Store critical backups in isolated environments not directly connected to the main network.
+- Conduct backup restoration drills to verify integrity and readiness.
+- 
+
 ## Open-source backup/sync programs
 
 These are independent, open-source backup/sync programs (mostly command-line focused, some with GUIs) that you run on your own computer. They talk to cloud storage services (including Google Drive, OneDrive, pCloud, S3, Backblaze, etc.) using their APIs — but they are not the official apps from those companies.
@@ -31,14 +40,24 @@ Always test with a small dataset first — performance and compatibility vary by
 
 These are platforms that provide cloud storage which are closed-source clients (except sometimes parts are open), tied to the company's ecosystem, and the company controls encryption keys (unless you use client-side encryption add-ons like Cryptomator).
 
+- Amazon S3
+- Backblaze
+- DigitalOcean
+- Dreamhost
 - Dropbox
 - Google drive storage
 - Google drive
 - iCloud
+- Jottacloud
+- Koofr
+- Linode
 - Mega
 - Microsoft Azure Blob
 - Microsoft Onedrive
+- Oracle Cloud Infrastructure Object Storage
 - Pcloud
+- Proton Drive
+- Wasabi
 
 These are convenient, polished, user-friendly for everyday use, especially if you're already in their ecosystem (Gmail, Office, etc.).
 
