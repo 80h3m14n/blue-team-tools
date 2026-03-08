@@ -1,6 +1,10 @@
 
 ## Powershell (.ps1) and Command line (.cmd or .bat)
 
+PowerShell and Command Prompt (CMD) are both command-line interfaces for Windows
+
+While CMD remains useful for basic tasks and legacy support, PowerShell is the standard for modern system administration, automation, and enterprise environments due to its depth, flexibility, and integration capabilities (My opinion - just use powershell)
+
 
 ## Analyze network connections
 
@@ -32,11 +36,34 @@ gcim -ClassName Win32_LogicalDisk | Select -Property DeviceID, DriveType, @{L='F
 ```
 
 
+### Firewall enumeration
+
+Retrieves and displays all enabled Windows Firewall rules with detailed information about each one.
+- Rule name
+- Associated program/Application
+- Rule description/details
+- RemoteAddresses — Allowed/blocked remote IPs (joined with commas)
+- Status: Enabled/Disabled
+- Direction — Inbound/Outbound
+- Action — Allow/Block
+
+
+```bash
+Get-NetFirewallRule -Enabled True |
+    Select-Object DisplayName,
+        @{Name='Application'; Expression={ (Get-NetFirewallApplicationFilter -AssociatedNetFirewallRule $_).Program }},
+        Description,
+        @{Name='RemoteAddresses'; Expression={ (Get-NetFirewallAddressFilter -AssociatedNetFirewallRule $_).RemoteAddress -join ', ' }},
+        Enabled, Direction, Action |
+    Format-Table -AutoSize
+```
+
+
 ## 👥© Credits
 
 Thank you for your work, which I have incorporated into this project. Your contribution has been valuable, and I appreciate the effort you've put into it.
 
-\- [Blue teamnotes by PurpleW0lf](https://github.com/Purp1eW0lf/Blue-Team-Notes)
+- [Blue teamnotes by PurpleW0lf](https://github.com/Purp1eW0lf/Blue-Team-Notes)
 
 
 
