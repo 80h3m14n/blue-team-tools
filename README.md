@@ -84,10 +84,14 @@ Check out the [tips-and-tricks/](https://github.com/80h3m14n/blue-team-tools/tre
 - [Python tricks](https://github.com/80h3m14n/blue-team-tools/blob/main/tips-and-tricks/python-tricks.md)
 - [Threat hunting tips](https://github.com/80h3m14n/blue-team-tools/blob/main/tips-and-tricks/threat-hunting.md)
 
-✅ Actively hunt threats and never solely rely on tools  
-✅ Invest in your infrastructure  
-✅ Learn to adapt to changes  
-✅ Have the mindset of an attacker  
+
+✅ Actively hunt threats and never solely rely on tools 
+✅ Invest in your infrastructure
+✅ Learn to adapt to changes
+✅ Have the mindset of an attacker 
+✅ If you happen to opt to outsource, make sure to choose the right vendor  
+
+
 
 ## 📘 Docs
 
@@ -97,7 +101,10 @@ Use it like a blue team wiki — IR playbooks, network tuning, malware triage ch
 - [IR Playbooks](https://github.com/80h3m14n/blue-team-tools/blob/main/docs/ir-playbooks.md)
 - [Malware Analysis](https://github.com/80h3m14n/blue-team-tools/blob/main/docs/malware-analysis.md)
 - [Network Monitoring](https://github.com/80h3m14n/blue-team-tools/blob/main/docs/network-monitoring.md)
+- [Preparation](https://github.com/80h3m14n/blue-team-tools/blob/main/docs/preparation.md)
 - [Threat Intel](https://github.com/80h3m14n/blue-team-tools/blob/main/docs/threat-intel.md)
+
+
 
 ## Additional resources
 
