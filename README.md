@@ -14,7 +14,7 @@ Practical toolkit for blue teams to detect, analyze, and mitigate cyber threats 
 
 
 
-## 📁 Project Structure
+### 📁 Project structure
 
 <details>
 <summary>📂 Click to expand</summary>
@@ -57,6 +57,15 @@ blue-team-tools/
     └── detection-engineering.md
 ```
 </details>
+
+
+### Blue team roles
+
+| Category  | Roles       |
+|-----------|-------------|
+| Proactive | - Threat hunter <br> - Defense engineer <br> - Malware analyst <br> - Network Administrator |
+| Reactive | - Security Operations Center (SOC) <br> - Incident Response (IR) <br> - Compliance officer <br> - Network manager |
+
 
 
 
