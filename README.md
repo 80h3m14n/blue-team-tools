@@ -2,15 +2,46 @@
 
 Practical toolkit for blue teams to detect, analyze, and mitigate cyber threats effectively, includes: tips & tricks, scripts, configurations, and tools for incident response, malware analysis, network monitoring, and threat intelligence.
 
-### Blue team life cycle
 
-1. Preparation/hardening
-2. Detection & monitoring
-3. Analysis
-4. Containment/isolation
-5. Eradication
-6. Recovery
-7. Lessons Learned
+# Incident response lifecycle
+
+The Incident Response lifecycle refers to the structured process used by blue teams to protect, detect, respond to, and recover from cyber threats
+
+This standards are employed by blue teams
+
+
+## NIST Incident Response Lifecycle
+
+NIST IR lifecycle is a structured framework focused on reactive and structured incident response standard for blue teams in most organizations
+
+### NIST SP 800-61 Rev. 2
+
+![NIST Incident Response Lifecycle](Images/NIST.png)
+
+
+### NIST SP 800-61 Rev. 3
+
+1. Preparation: Harden systems, train teams, deploy tools (SIEM, EDR).
+
+2. Detection & monitoring: Use logs, alerts, and baselines to spot anomalies.
+
+3. Threat analysis: Confirm incidents, assess scope and impact.
+
+4. Containment: Isolate systems to stop spread (short- and long-term).
+
+5. Eradication: Remove malware, patch vulnerabilities, close backdoors.
+
+6. Recovery: Restore systems, monitor for recurrence.
+
+7. Lessons Learned: Review incident, update playbooks, improve defenses
+
+
+## SANS Incident Response  lifecycle (PICERL)
+
+![SANS Incident Response Lifecycle](Images/SANS.png)
+
+
+This SANS lifecycle emphasizes continuous improvement, integrating threat intelligence and proactive measures like threat hunting and vulnerability management
 
 
 
@@ -94,10 +125,14 @@ Check out the [tips-and-tricks/](https://github.com/80h3m14n/blue-team-tools/tre
 - [Threat hunting tips](https://github.com/80h3m14n/blue-team-tools/blob/main/tips-and-tricks/threat-hunting.md)
 
 
-✅ Actively hunt threats and never solely rely on tools 
+✅ Actively hunt threats and never solely rely on tools
+
 ✅ Invest in your infrastructure
+
 ✅ Learn to adapt to changes
+
 ✅ Have the mindset of an attacker 
+
 ✅ If you happen to opt to outsource, make sure to choose the right vendor  
 
 
