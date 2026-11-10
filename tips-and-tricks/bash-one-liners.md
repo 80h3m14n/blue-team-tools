@@ -11,6 +11,12 @@ for user in $(cut -f1 -d: /etc/passwd); do echo "=== $user ==="; crontab -u $use
 
 # Check for suspicious cron jobs (common persistence mechanism)
 grep -r "curl|wget|bash|sh|python|perl" /etc/cron* 2>/dev/null
+
+# Public Github profile enum
+curl -sS "https://api.github.com/users/80h3m14n/repos?per_page=100&sort=updated"   | jq -r '["name","stars","forks","watchers","open_issues","language","fork?","pushed_at"],
+           (.[] | [.name, .stargazers_count, .forks_count, .subscribers_count,
+                   .open_issues_count, (.language // "-"), .fork, .pushed_at])
+           | @tsv' | column -t -s $'\t'
 ```
 
 ## Network Analysis & Monitoring
