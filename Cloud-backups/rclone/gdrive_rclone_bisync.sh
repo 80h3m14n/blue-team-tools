@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 
 set -Eeuo pipefail
@@ -9,8 +8,8 @@ umask 077
 # ============================================================
 
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/rclone"
-LOG="$STATE_DIR/gdrive-rclone-bisync.log"
-LOCK="$STATE_DIR/gdrive-rclone-bisync.lock"
+LOG="$STATE_DIR/gdrive_rclone_bisync.log"
+LOCK="$STATE_DIR/gdrive_rclone_bisync.lock"
 
 mkdir -p "$STATE_DIR"
 
@@ -136,6 +135,10 @@ for folder in "${FOLDERS[@]}"; do
         --resilient \
         --recover \
         --max-lock=2m \
+        --conflict-resolve newer \
+        --conflict-suffix conflict \
+        --conflict-loser num \
+        --compare size,modtime \
         --log-level INFO
     then
         echo "SUCCESS: $folder"
@@ -190,19 +193,15 @@ echo "All available folders processed."
 : <<'END_USAGE'
 
 # 1. Initial --resync setup
-
 nano ~/.config/rclone/bisync-excludes.txt
-
 rclone bisync "$HOME/dir" "gdrive:Fedora/dir" --resync --resync-mode path1 --exclude-from "$HOME/.config/rclone/bisync-excludes.txt"
 
 # 2. Make sync script executable
-
-chmod +x ./gdrive-rclone-bisync.sh
+chmod +x ./gdrive_rclone_bisync.sh
 
 # 3. Create a user service
-
 mkdir -p ~/.config/systemd/user
-nano ~/.config/systemd/user/gdrive-rclone-bisync.service
+nano ~/.config/systemd/user/gdrive_rclone_bisync.service
 
 # Paste the following
 [Unit]
@@ -210,14 +209,12 @@ Description=Rclone Bisync
 
 [Service]
 Type=oneshot
-ExecStart=%h/Projects/Scripts/Bash-scripts/rclone/gdrive-rclone-bisync.sh
-
+ExecStart=%h/Projects/Scripts/Bash-scripts/rclone/gdrive_rclone_bisync.sh
 
 # 4. Create timer
-
 nano ~/.config/systemd/user/gdrive-rclone-bisync.timer
 
-# Paste the following
+# Paste the following:
 [Unit]
 Description=Run rclone bisync hourly
 
@@ -230,18 +227,16 @@ WantedBy=timers.target
 
 # 5. Enable service & timer
 systemctl --user daemon-reload
-systemctl --user enable --now gdrive-rclone-bisync.timer
+systemctl --user enable --now gdrive_rclone_bisync.timer
 
 # 6. Make it Persistent across boots
 sudo loginctl enable-linger ryan
 loginctl show-user ryan | grep Linger
 
-
-# Configure logrotate
-
+# 7. Configure logrotate
 sudo nano /etc/logrotate.d/gdrive-rclone-bisync
 
-## Paste
+## Paste:
 $HOME/.local/state/rclone/gdrive-rclone-bisync.log {
     size 10M
     rotate 5
@@ -253,15 +248,13 @@ $HOME/.local/state/rclone/gdrive-rclone-bisync.log {
 
 # 8. Tests & troubleshoots
 
-systemctl --user start gdrive-rclone-bisync.service
-journalctl --user -u gdrive-rclone-bisync.service -f
-grep "FAILED:" logs/gdrive-rclone-bisync.log
+systemctl --user start gdrive_rclone_bisync.service
+journalctl --user -u gdrive_rclone_bisync.service -f
+grep "FAILED:" logs/gdrive_rclone_bisync.log
 ls ~/.cache/rclone/bisync/
 pgrep -af 'rclone.*bisync'
-tail -100 logs/gdrive-rclone-bisync.log
+tail -100 $HOME/.local/state/rclone/gdrive-rclone-bisync.log
 systemctl --user list-timers
-systemctl --user status gdrive-rclone-bisync.service
-systemctl --user status gdrive-rclone-bisync.timer
 
 Add $HOME/.cache/rclone/ to bleachbit whitelist
 
