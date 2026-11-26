@@ -1,137 +1,173 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==========================================
 # HOURLY GOOGLE DRIVE MIRROR BACKUP
 # True 1:1 PC <--> Cloud mirror
-# Optimized for Low internet speed / 8GB RAM / 256 SSD
 # ==========================================
 
-PATH=/usr/bin:/bin
+set -Eeuo pipefail
+umask 077
 
-LOCKFILE="/tmp/rclone/rclone_backup.lock"
-LOGFILE="$HOME/Scripts/backup.log"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/rclone"
+LOG="$STATE_DIR/gdrive_rclone_sync.log"
+LOCK="$STATE_DIR/gdrive_rclone_sync.lock"
 
-# ----------------------------
-# Log Rotation (5MB limit) - Rotated .gz files created directly in /tmp/rclone/
-# ----------------------------
-MAX_LOG_SIZE=$((5 * 1024 * 1024)) # 5 MiB
+mkdir -p "$STATE_DIR"
 
-# Ensure rotation directory exists
-mkdir -p /tmp/rclone
-
-if [ -f "$LOGFILE" ]; then
-    FILESIZE=$(stat -c%s "$LOGFILE" 2>/dev/null || echo 0)
-    if [ "$FILESIZE" -ge "$MAX_LOG_SIZE" ]; then
-        TIMESTAMP=$(/usr/bin/date +%Y%m%d_%H%M%S)
-        ROTATED_LOG="/tmp/rclone/backup.log.${TIMESTAMP}"
-
-        echo "[$(/usr/bin/date)] Log size exceeded ${MAX_LOG_SIZE} bytes. Rotating..." >> "$LOGFILE"
-
-        # Create compressed log directly in /tmp/rclone/ (most efficient)
-        cat "$LOGFILE" | gzip > "${ROTATED_LOG}.gz"
-
-        # Truncate original log file (starts fresh for next run)
-        > "$LOGFILE"
-
-        echo "[$(/usr/bin/date)] ✅ Log rotated: ${ROTATED_LOG}.gz" >> "$LOGFILE"
-
-        # Cleanup old rotated logs (> 7 days)
-        find /tmp/rclone -name "backup.log.*.gz" -mtime +7 -delete 2>/dev/null || true
-    fi
+# Prevent overlapping runs
+exec 9>"$LOCK"
+if ! flock -n 9; then
+    echo "[$(date)] Another sync is already running. Skipping." >> "$LOG"
+    exit 0
 fi
 
-# ----------------------------
-# Prevent overlapping runs
-# ----------------------------
-exec 200>"$LOCKFILE"
-flock -n 200 || {
-    echo "[$(/usr/bin/date)] Backup already running. Skipping..." >> "$LOGFILE"
-    exit 1
-}
+# All output into one log
+exec >> "$LOG" 2>&1
 
-echo "=========================================" >> "$LOGFILE"
-echo "🔄 Starting Hourly Mirror Sync..." >> "$LOGFILE"
-echo "🕐 $(/usr/bin/date)" >> "$LOGFILE"
+trap 'rc=$?; printf "\nFinished: %s (exit code: %s)\n" "$(date)" "$rc"' EXIT
 
-# ----------------------------
-# Folders to backup
-# ----------------------------
+echo
+echo "=================================================="
+echo "Google Drive Sync Started: $(date)"
+echo "PID: $$"
+echo "=================================================="
+
+# Verify rclone
+if ! command -v rclone >/dev/null 2>&1; then
+    echo "ERROR: rclone is not installed or not in PATH."
+    exit 127
+fi
+
+# ------------------------------------------------------------
+# Configuration
+# ------------------------------------------------------------
+
+REMOTE_ROOT="gdrive:Fedora"
+
 FOLDERS=(
     "Bug-hunting"
     "CTF"
-    "DockerImages"
     "Documents"
-    "Malware"
     "Pictures"
     "Projects"
-    "Scripts"
-    "Vulnerable-labs"
-    "wordlists"
 )
 
-# ----------------------------
-# Optional safety backup for deleted files
-# ----------------------------
-# SAFETY_BACKUP="--backup-dir=gdrive:LinuxCloudBackup_deleted/$(date +%Y-%m-%d)"
+EXCLUDES=(
+    --exclude="**/.git/**"
+    --exclude="**/.idea/**"
+    --exclude="**/.vscode/**"
+    --exclude="**/.gradle/**"
+    --exclude="**/.svn/**"
+    --exclude="**/.hg/**"
+    --exclude="**/.terraform/**"
+
+    --exclude="**/build/**"
+    --exclude="**/dist/**"
+    --exclude="**/target/**"
+    --exclude="**/out/**"
+    --exclude="**/node_modules/**"
+    --exclude="**/vendor/**"
+    --exclude="**/Pods/**"
+
+    --exclude="**/.venv/**"
+    --exclude="**/venv/**"
+    --exclude="**/__pycache__/**"
+    --exclude="**/site-packages/**"
+
+    --exclude="**/.pytest_cache/**"
+    --exclude="**/.mypy_cache/**"
+    --exclude="**/.ruff_cache/**"
+    --exclude="**/.tox/**"
+    --exclude="**/.next/**"
+    --exclude="**/.cache/**"
+    --exclude="**/.npm/**"
+    --exclude="**/.pnpm-store/**"
+    --exclude="**/.phpunit.cache/**"
+    --exclude="**/coverage/**"
+
+    --exclude="**/*.pyc"
+    --exclude="**/*.tmp"
+    --exclude="**/*.swp"
+    --exclude="**/*~"
+    --exclude="**/.DS_Store"
+    --exclude="**/Thumbs.db"
+    --exclude="**/*.log"
+)
+
+# Optional: keep deleted files for a few days
+# SAFETY_BACKUP="--backup-dir=${REMOTE_ROOT}_deleted/$(date +%Y-%m-%d)"
 SAFETY_BACKUP=""
 
-# ----------------------------
-# Sync each folder
-# ----------------------------
-for FOLDER in "${FOLDERS[@]}"; do
-    SRC="$HOME/$FOLDER"
-    DEST="gdrive:LinuxCloudBackup/$FOLDER"
+# ------------------------------------------------------------
+# Sync loop
+# ------------------------------------------------------------
 
-    echo "Checking folder: $SRC" >> "$LOGFILE"
-    if [ -d "$SRC" ]; then
-        echo "[$(/usr/bin/date)] 🔄 Syncing $FOLDER..." >> "$LOGFILE"
-        /usr/bin/rclone sync "$SRC" "$DEST" \
-            ${SAFETY_BACKUP:+--backup-dir "$SAFETY_BACKUP"} \
-            --fast-list \
-            --transfers=4 \
-            --checkers=8 \
-            --drive-chunk-size=64M \
-            --drive-pacer-min-sleep=100ms \
-            --exclude=.venv/** \
-            --exclude=__pycache__/** \
-            --exclude='*.pyc' \
-            --exclude=.git/** \
-            --exclude=node_modules/** \
-            --exclude=.cache/** \
-            --exclude=.DS_Store \
-            --order-by modtime,desc \
-            --retries=5 \
-            --low-level-retries=10 \
-            --timeout=15m \
-            --drive-acknowledge-abuse \
-            --log-level INFO \
-            --log-file="$LOGFILE"
-    else
-        echo "[$(/usr/bin/date)] ⚠️ Skipped: $FOLDER not found." >> "$LOGFILE"
+FAILED=()
+SKIPPED=()
+
+for folder in "${FOLDERS[@]}"; do
+    LOCAL="$HOME/$folder"
+    REMOTE="${REMOTE_ROOT}/$folder"
+
+    echo
+    echo "--------------------------------------------------"
+    echo "Folder: $folder"
+    echo "Started: $(date)"
+    echo "--------------------------------------------------"
+
+    if [[ ! -d "$LOCAL" ]]; then
+        echo "WARNING: Local directory does not exist: $LOCAL"
+        SKIPPED+=("$folder")
+        continue
     fi
+
+    if rclone sync \
+        "$LOCAL" \
+        "$REMOTE" \
+        "${EXCLUDES[@]}" \
+        ${SAFETY_BACKUP} \
+        --create-empty-src-dirs \
+        --fast-list \
+        --transfers 4 \
+        --checkers 8 \
+        --drive-chunk-size 64M \
+        --drive-pacer-min-sleep 100ms \
+        --retries 5 \
+        --low-level-retries 10 \
+        --timeout 15m \
+        --drive-acknowledge-abuse \
+        --log-level INFO
+    then
+        echo "SUCCESS: $folder"
+    else
+        rc=$?
+        echo "ERROR: $folder failed with exit code $rc"
+        FAILED+=("$folder (exit $rc)")
+    fi
+
+    echo "Completed: $(date)"
 done
 
-TIME_DONE=$(/usr/bin/date)
-echo "[$TIME_DONE] ✅ Mirror sync complete" >> "$LOGFILE"
-echo "=========================================" >> "$LOGFILE"
+# ------------------------------------------------------------
+# Summary
+# ------------------------------------------------------------
 
-# ----------------------------
-# Daily Integrity Check (once per day)
-# ----------------------------
-TODAY_FILE="/tmp/rclone/rclone_last_check"
-TODAY=$(/usr/bin/date +%Y-%m-%d)
+echo
+echo "=================================================="
+echo "SYNC SUMMARY"
+echo "=================================================="
+echo "Total folders: ${#FOLDERS[@]}"
+echo "Failed: ${#FAILED[@]}"
+echo "Skipped: ${#SKIPPED[@]}"
 
-if [ ! -f "$TODAY_FILE" ] || [ "$(cat "$TODAY_FILE" 2>/dev/null)" != "$TODAY" ]; then
-    echo "[$(/usr/bin/date)] 🔎 Running daily integrity check..." >> "$LOGFILE"
-
-    /usr/bin/rclone check "$HOME" "gdrive:LinuxCloudBackup" \
-        --one-way \
-        --fast-list \
-        --log-level INFO \
-        --log-file="$LOGFILE"
-
-    echo "$TODAY" > "$TODAY_FILE"
-    echo "[$(/usr/bin/date)] ✅ Integrity check complete." >> "$LOGFILE"
+if ((${#FAILED[@]})); then
+    echo
+    echo "FAILED FOLDERS:"
+    printf ' - %s\n' "${FAILED[@]}"
+    exit 1
 fi
+
+echo
+echo "All available folders processed."
 
 # ----------------------------
 # Usage Instructions (for systemd setup)
@@ -139,15 +175,15 @@ fi
 
 : <<'END_USAGE'
 
-# 1️⃣ Copy script to /usr/local/bin/
-Edit to omit the usage instructions section (the multi-line comment might cause issues with the script funtionality)
+# 1. Initial sync
+chmod +x ./gdrive_rclone_sync.sh
+./gdrive_rclone_sync.sh
 
-cp "$(pwd)/gdrive_rclone_sync.sh" /usr/local/bin/gdrive_rclone_sync.sh
+# 2. Create a user service
+mkdir -p ~/.config/systemd/user
+nano ~/.config/systemd/user/gdrive_rclone_sync.service
 
-# 2️⃣ Create Service file
-# sudo nano /etc/systemd/system/rclone-backup.service
-# Paste below (replace YOUR_USERNAME):
-
+# Paste the following (replace YOUR_USERNAME):
 [Unit]
 Description=Rclone Google Drive Mirror Backup
 Wants=network-online.target
@@ -156,17 +192,17 @@ After=network-online.target
 [Service]
 Type=oneshot
 User=YOUR_USERNAME
-ExecStart=/usr/local/bin/gdrive_rclone_sync.sh
+ExecStart=%h/Projects/Scripts/Bash-scripts/rclone/gdrive_rclone_sync.sh
 Nice=10
 IOSchedulingClass=best-effort
 IOSchedulingPriority=7
 
-# 3️⃣ Create Timer file
-# sudo nano /etc/systemd/system/rclone-backup.timer
-# Paste below:
+# 3. Create Timer
+nano ~/.config/systemd/user/gdrive_rclone_sync.timer
 
+# Paste the following:
 [Unit]
-Description=Run Rclone Backup Every Hour
+Description=Run Rclone hourly cloud sync
 
 [Timer]
 OnCalendar=hourly
@@ -175,12 +211,27 @@ Persistent=true
 [Install]
 WantedBy=timers.target
 
-# 4️⃣ Enable timer
-# sudo systemctl daemon-reload
-# sudo systemctl enable --now rclone-backup.timer
+# 4. Enable systemd service & timer
+systemctl --user daemon-reload
+systemctl --user enable --now gdrive_rclone_sync.timer
 
-# 5️⃣ Check status
-# systemctl list-timers
-# journalctl -u rclone-backup.service
+
+# 5. Make it Persistent across boots
+sudo loginctl enable-linger ryan
+loginctl show-user ryan | grep Linger
+
+
+# 6. Tests & troubleshoots
+systemctl --user start gdrive_rclone_sync.service
+journalctl --user -u gdrive_rclone_sync.service
+ls ~/.cache/rclone/sync/
+systemctl --user list-timers
+systemctl --user status gdrive_rclone_sync.service
+systemctl --user status gdrive_rclone_sync.timer
+tail -100 $HOME/.local/state/rclone/gdrive_rclone_sync.log
+
+Add $HOME/.cache/rclone/ to bleachbit whitelist
+
+Watch logs for error messages
 
 END_USAGE
